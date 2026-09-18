@@ -20,9 +20,20 @@ OPEN_ALEX_API_KEY= os.getenv("OPEN_ALEX_API_KEY", "rqxsibReeMmwD1Y9p4yiYq")
 OPEN_ALEX_URL = "https://api.openalex.org/sources/"
 
 
-def online_access(
+def get_online_access_score(
     issn : str
 ) -> int:
+    """학술지 및 수록 논문의 온라인 접근성을 평가한다.
+
+    Args:
+        issn (str): ISSN(International Standard Serial Number)
+
+    Raises:
+        Exception: _description_
+
+    Returns:
+        int: 평가 점수
+    """
     
     response = requests.get(
         f"{OPEN_ALEX_URL}issn:{issn}?api_key={OPEN_ALEX_API_KEY}"
