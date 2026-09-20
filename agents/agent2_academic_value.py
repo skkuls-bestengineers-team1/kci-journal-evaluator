@@ -235,19 +235,28 @@ def calculate_academic_value_score(evaluation: AcademicValueEvaluation) -> float
 # 4. Agent2 Node
 # ==========================================================
 
+def _get(obj, key, default=None):
+    """dict와 Pydantic 객체를 모두 읽는다 (그래프 안에서는 state가 객체로 전달됨)."""
+
+    if isinstance(obj, dict):
+        return obj.get(key, default)
+    return getattr(obj, key, default)
+
+
 def agent2_node(state: KCIEvalState) -> dict:
     """논문의 학술적 가치와 성과를 평가하고 Agent2 결과를 반환한다."""
 
-    paper_text = state["paper"]["raw_text"].strip()
+    paper = _get(state, "paper", {})
+    paper_text = (_get(paper, "raw_text") or "").strip()
 
     if not paper_text:
         raise ValueError(
             "Agent2 평가를 수행할 논문 텍스트가 없습니다."
         )
 
-    journal_meta = state.get("journal_meta", {})
-    major_research_field = journal_meta.get("major_research_field") or ""
-    middle_research_field = journal_meta.get("middle_research_field") or ""
+    journal_meta = _get(state, "journal_meta", {})
+    major_research_field = _get(journal_meta, "major_research_field") or ""
+    middle_research_field = _get(journal_meta, "middle_research_field") or ""
 
     llm = ChatGoogleGenerativeAI(
         model = GEMINI_MODEL_NAME,

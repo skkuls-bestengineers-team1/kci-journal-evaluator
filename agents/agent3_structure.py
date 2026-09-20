@@ -229,7 +229,8 @@ def calculate_structure_score(evaluation: StructureEvaluation) -> float:
 def agent3_node(state: KCIEvalState) -> dict:
     """논문의 구성·체제·가독성을 평가하고 Agent3 결과를 반환한다."""
 
-    paper_text = state["paper"]["raw_text"].strip()
+    paper = state["paper"] if isinstance(state, dict) else state.paper
+    paper_text = paper["raw_text"].strip()
 
     if not paper_text:
         raise ValueError(
