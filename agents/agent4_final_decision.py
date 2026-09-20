@@ -2,7 +2,7 @@
 Agent4: 종합심의 — 최종 판정 + 코멘트 생성
 
 입력:
-    state["stage2_score"]   # 2단계 체계평가 점수 (20점 만점)
+    state["total_stage2_score"] 또는 state["stage2_score"]
     state["stage3_total"]   # 3단계 내용평가 합산 점수 (80점 만점)
     state["stage3_results"] # Agent2/Agent3 세부등급·근거 (코멘트용, 선택)
 
@@ -28,6 +28,19 @@ from config import (
     STAGE3_MAX_SCORE,
 )
 from state import KCIEvalState, Stage3AgentResult
+
+
+def _get(state, key, default=None):
+    if isinstance(state, dict):
+        return state.get(key, default)
+    return getattr(state, key, default)
+
+
+def _stage2_score(state):
+    score = _get(state, "total_stage2_score")
+    if score is None:
+        score = _get(state, "stage2_score")
+    return score
 
 
 class FinalComment(BaseModel):
@@ -106,22 +119,27 @@ def compute_final_decision(
 def _format_foreign_lang_summary(state: KCIEvalState) -> str:
     """2단계 외국어화 판정 요약을 만든다."""
 
-    satisfied = state.get("foreign_lang_satisfied")
-    extraction_failed = state.get("foreign_lang_extraction_failed")
+    reason = (_get(state, "foreign_language_reason") or "").strip()
+    satisfied = _get(state, "foreign_lang_passed")
+    if satisfied is None:
+        satisfied = _get(state, "foreign_lang_satisfied")
+    extraction_failed = _get(state, "foreign_lang_extraction_failed")
 
     if extraction_failed is True:
         return "초록/주제어 섹션 추출 실패 (오탈락 가능)"
     if satisfied is True:
         return "충족"
     if satisfied is False:
-        return "미충족"
+        return reason or "미충족"
+    if reason:
+        return reason
     return "정보 없음"
 
 
 def _format_stage3_summary(state: KCIEvalState) -> str:
     """Agent2/Agent3 세부등급·근거를 코멘트용 텍스트로 정리한다."""
 
-    results = state.get("stage3_results") or []
+    results = _get(state, "stage3_results") or []
     if not results:
         return "세부 평가 결과 없음"
 
@@ -157,8 +175,8 @@ def render_template_comment(
 ) -> str:
     """LLM 없이 사용할 템플릿 코멘트."""
 
-    stage2_score = state["stage2_score"]
-    stage3_total = state["stage3_total"]
+    stage2_score = _stage2_score(state)
+    stage3_total = _get(state, "stage3_total")
     gap = round(final_score - FINAL_PASS_THRESHOLD, 1)
 
     if verdict == "등재후보 선정":
@@ -201,10 +219,10 @@ def _generate_llm_comment(
             "final_max": FINAL_MAX_SCORE,
             "verdict": verdict,
             "threshold": FINAL_PASS_THRESHOLD,
-            "stage2_score": state["stage2_score"],
+            "stage2_score": _stage2_score(state),
             "stage2_max": STAGE2_MAX_SCORE,
             "foreign_lang_summary": _format_foreign_lang_summary(state),
-            "stage3_total": state["stage3_total"],
+            "stage3_total": _get(state, "stage3_total"),
             "stage3_max": STAGE3_MAX_SCORE,
             "stage3_summary": _format_stage3_summary(state),
         }
@@ -236,11 +254,11 @@ def generate_final_comment(
 def agent4_node(state: KCIEvalState) -> dict:
     """2+3단계 점수를 합산해 최종 판정과 코멘트를 반환한다."""
 
-    stage2_score = state.get("stage2_score")
-    stage3_total = state.get("stage3_total")
+    stage2_score = _stage2_score(state)
+    stage3_total = _get(state, "stage3_total")
 
     if stage2_score is None:
-        raise ValueError("Agent4 종합심의를 수행할 stage2_score가 없습니다.")
+        raise ValueError("Agent4 종합심의를 수행할 2단계 점수가 없습니다.")
     if stage3_total is None:
         raise ValueError("Agent4 종합심의를 수행할 stage3_total이 없습니다.")
 

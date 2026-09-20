@@ -7,9 +7,16 @@
 
 import os
 
+from pathlib import Path
+
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(Path(__file__).resolve().parent / ".env")
+
+# LangChain Google 클라이언트는 GOOGLE_API_KEY를 본다.
+# 프로젝트 .env는 GEMINI_API_KEY만 쓰므로 여기서 맞춰 준다.
+if os.getenv("GEMINI_API_KEY") and not os.getenv("GOOGLE_API_KEY"):
+    os.environ["GOOGLE_API_KEY"] = os.environ["GEMINI_API_KEY"]
 
 GEMINI_MODEL_NAME = os.getenv("GEMINI_MODEL_NAME", "gemini-3.7-flash")
 

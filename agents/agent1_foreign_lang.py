@@ -20,7 +20,7 @@ from state import (
 
 BASE_DIR = Path(__file__).resolve().parent
 ROOT_DIR = BASE_DIR.parent
-ENV_PATH = ROOT_DIR.parent / ".env"
+ENV_PATH = ROOT_DIR / ".env"
 TEST_PATH = ROOT_DIR / "data" /"Synthetic_B_StructureReadability_Degraded.pdf"
 
 load_dotenv(dotenv_path=ENV_PATH)
@@ -43,14 +43,10 @@ TAVILY_API_KEY = os.getenv(
 
 
 if not GEMINI_API_KEY:
-    raise ValueError(
-        "GEMINI_API_KEY가 존재하지 않습니다."
-    )
+    GEMINI_API_KEY = ""
 
 if not TAVILY_API_KEY:
-    raise ValueError(
-        "TAVILY_API_KEY가 존재하지 않습니다."
-    )
+    TAVILY_API_KEY = ""
 
 
 OPEN_ALEX_URL = (
@@ -60,9 +56,7 @@ OPEN_ALEX_URL = (
 MODEL_NAME = "gemini-3.6-flash"
 
 
-gemini_client = genai.Client(
-    api_key=GEMINI_API_KEY,
-)
+gemini_client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
 
 
 

@@ -5,3 +5,9 @@ pydantic
 streamlit
 pdfplumber
 python-dotenv
+pandas
+requests
+google-genai
+tavily-python
+tenacity
+pypdf
