@@ -21,8 +21,8 @@ from state import (
 # ==========================================================
 
 BASE_DIR = Path(__file__).resolve().parent
-ROOT_DIR = BASE_DIR.parent
-ENV_PATH = ROOT_DIR.parent / ".env"
+ROOT_DIR = BASE_DIR.parent.parent  # agents/tools -> 프로젝트 루트
+ENV_PATH = ROOT_DIR / ".env"
 
 load_dotenv(dotenv_path=ENV_PATH)
 
@@ -44,14 +44,10 @@ TAVILY_API_KEY = os.getenv(
 
 
 if not GEMINI_API_KEY:
-    raise ValueError(
-        "GEMINI_API_KEY가 존재하지 않습니다."
-    )
+    GEMINI_API_KEY = ""
 
 if not TAVILY_API_KEY:
-    raise ValueError(
-        "TAVILY_API_KEY가 존재하지 않습니다."
-    )
+    TAVILY_API_KEY = ""
 
 
 OPEN_ALEX_URL = (
@@ -65,13 +61,8 @@ MODEL_NAME = "gemini-3.6-flash"
 # Client
 # ==========================================================
 
-tavily_client = TavilyClient(
-    api_key=TAVILY_API_KEY,
-)
-
-gemini_client = genai.Client(
-    api_key=GEMINI_API_KEY,
-)
+tavily_client = TavilyClient(api_key=TAVILY_API_KEY) if TAVILY_API_KEY else None
+gemini_client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
 
 
 # ==========================================================
@@ -132,10 +123,14 @@ def get_journal_meta(
     state에서 학술지 metadata를 가져온다.
     """
 
-    return state.get(
-        "journal_meta",
-        {},
-    )
+    if isinstance(state, dict):
+        meta = state.get("journal_meta", {})
+    else:
+        meta = getattr(state, "journal_meta", {})
+
+    if hasattr(meta, "model_dump"):
+        return meta.model_dump()
+    return meta or {}
 
 
 def get_paper_raw_text(
@@ -145,15 +140,15 @@ def get_paper_raw_text(
     state에서 평가 대상 논문의 raw_text를 가져온다.
     """
 
-    paper = state.get(
-        "paper",
-        {},
-    )
+    if isinstance(state, dict):
+        paper = state.get("paper", {})
+    else:
+        paper = getattr(state, "paper", {})
 
-    return paper.get(
-        "raw_text",
-        "",
-    )
+    if hasattr(paper, "model_dump"):
+        paper = paper.model_dump()
+
+    return (paper or {}).get("raw_text", "")
 
 
 def normalize_issn(
@@ -320,7 +315,7 @@ def get_journal_publication_frequency_score(
         or ""
     )
 
-    if not any([
+    if tavily_client is None or not any([
         journal_name,
         issn,
         eissn,
@@ -445,6 +440,9 @@ def get_online_access_score(
     print("[학술지 수록 및 수록 논문의 온라인 접근성] 시작")
     print("=" * 80)
 
+    online_access_score = 0.0
+    online_access_score_passed = False
+
     try:
         journal_meta = get_journal_meta(state)
 
@@ -548,7 +546,7 @@ def get_online_access_score(
         print("=" * 80)
 
         print(f"online_access_score : {online_access_score}")
-        print(f"online_access_score_passed : {(online_access_score > 0)}")
+        print(f"online_access_score_passed : {online_access_score_passed or (online_access_score > 0)}")
 
 
 
@@ -579,6 +577,14 @@ def get_keyword_abstract_foreign_language_score(
             "foreign_language_reason": (
                 "평가할 논문 전문 텍스트가 없습니다."
             ),
+            "foreign_lang_score": 0.0,
+            "foreign_lang_passed": False,
+        }
+
+    if gemini_client is None:
+        return {
+            "foreign_language_ratio": 0.0,
+            "foreign_language_reason": "GEMINI_API_KEY가 없어 외국어화 평가를 건너뛰었습니다.",
             "foreign_lang_score": 0.0,
             "foreign_lang_passed": False,
         }
