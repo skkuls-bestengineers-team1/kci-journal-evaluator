@@ -642,23 +642,23 @@ def get_keyword_abstract_foreign_language_score(
 
 
     if foreign_language_ratio == 100:
-        foreign_lang_score = 2.0
+        foreign_lang_score = 20
         foreign_lang_passed = True
 
     elif foreign_language_ratio >= 90:
-        foreign_lang_score = 1.5
+        foreign_lang_score = 15
         foreign_lang_passed = True
 
     elif foreign_language_ratio >= 80:
-        foreign_lang_score = 1.0
+        foreign_lang_score = 10
         foreign_lang_passed = True
 
     elif foreign_language_ratio >= 70:
-        foreign_lang_score = 0.5
+        foreign_lang_score = 5
         foreign_lang_passed = True
 
     else:
-        foreign_lang_score = 0.0
+        foreign_lang_score = 0
         foreign_lang_passed = False
 
     print("\n\n\n\n")

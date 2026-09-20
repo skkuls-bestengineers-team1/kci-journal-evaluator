@@ -61,8 +61,8 @@ gemini_client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
 
 
 def calculate_stage2_result(
-    publication_result: dict,
-    online_access_result: dict,
+    # publication_result: dict,
+    # online_access_result: dict,
     foreign_language_result: dict,
 ) -> dict:
     """
@@ -81,6 +81,7 @@ def calculate_stage2_result(
     # 1. Tool 결과에서 점수 추출
     # =====================================================
 
+    '''
     journal_publication_frequency_score = (
         publication_result.get(
             "journal_publication_frequency_score",
@@ -94,7 +95,9 @@ def calculate_stage2_result(
             0.0,
         )
     )
-
+    '''
+    journal_publication_frequency_score = 0.0
+    online_access_score = 0.0
     foreign_lang_score = (
         foreign_language_result.get(
             "foreign_lang_score",
@@ -106,7 +109,7 @@ def calculate_stage2_result(
     # =====================================================
     # 2. Tool 결과에서 PASS 여부 추출
     # =====================================================
-
+    '''
     journal_publication_frequency_passed = (
         publication_result.get(
             "journal_publication_frequency_passed",
@@ -120,8 +123,10 @@ def calculate_stage2_result(
             False,
         )
     )
+    '''
+    
 
-    foreign_lang_passed = (
+    foreign_lang_passed  = (
         foreign_language_result.get(
             "foreign_lang_passed",
             False,
@@ -132,6 +137,9 @@ def calculate_stage2_result(
     # =====================================================
     # 3. 총점 계산
     # =====================================================
+
+    journal_publication_frequency_passed = True
+    online_access_score_passed = True
 
     total_stage2_score = (
         journal_publication_frequency_score
@@ -145,7 +153,7 @@ def calculate_stage2_result(
     #
     # 하나라도 0점이면 FAIL
     # =====================================================
-
+    '''
     scores = [
         journal_publication_frequency_score,
         online_access_score,
@@ -156,7 +164,8 @@ def calculate_stage2_result(
         score > 0
         for score in scores
     )
-
+    '''
+    total_stage2_pass = True
 
     # =====================================================
     # 5. 최종 결과 반환
@@ -240,7 +249,7 @@ def agent1_node(
     # =====================================================
     # 1. 연간 학술지 발간 횟수 평가
     # =====================================================
-
+    '''
     publication_result = (
         get_journal_publication_frequency_score(
             state
@@ -257,7 +266,7 @@ def agent1_node(
             state
         )
     )
-
+    '''
 
     # =====================================================
     # 3. 주제어 및 논문 초록 외국어화 평가
@@ -275,8 +284,8 @@ def agent1_node(
     # =====================================================
 
     result = calculate_stage2_result(
-        publication_result=publication_result,
-        online_access_result=online_access_result,
+        # publication_result=publication_result,
+        # online_access_result=online_access_result,
         foreign_language_result=foreign_language_result,
     )
 
